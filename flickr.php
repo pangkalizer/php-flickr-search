@@ -15,18 +15,17 @@ class Flickr {
   public function search($keyword, $options = array()) {
     $this->query = $keyword;
     $this->searchData = $this->flickr->search($this->query, $options);
-    // print_r($this->searchData);
     return $this->searchData;
   }
 
   public function result_text() {
     if ($this->has_results()) {
       return sprintf("Displaying page %s of about %s results", 
-              number_format($this->searchData['photos']['page']), 
-              number_format($this->searchData['photos']['total']));
+              number_format($this->searchData['page']), 
+              number_format($this->searchData['total']));
     } 
     else {
-      return "Search returns no result.";
+      return sprintf('No results found for "%s"', $this->query);
     }
   }
 
@@ -34,17 +33,18 @@ class Flickr {
     if (!$this->has_results()) return;
 
     $str = '';
-    foreach($this->searchData['photos']['photo'] as $photo) { 
+    foreach($this->searchData['photo'] as $photo) { 
       $str .= $this->result_item($photo);
     }
     return empty($str) ? '' : '<ul>' . $str . '</ul>';
   }
 
   public function render_pagination() {
-    if (!isset($this->searchData)) return;
-    $page = $this->searchData['photos']['page'];
-    $pages = $this->searchData['photos']['pages'];
-    $total = $this->searchData['photos']['total'];
+    if (!$this->has_results()) return;
+
+    $page = $this->searchData['page'];
+    $pages = $this->searchData['pages'];
+    $total = $this->searchData['total'];
     $str = '';
 
     // make sure we dont go over result boundary 
@@ -87,7 +87,7 @@ class Flickr {
   }
 
   private function has_results() {
-    return (!empty($this->searchData['photos']) && (count($this->searchData['photos']['photo']) > 0));
+    return (!empty($this->searchData['photo']));
   }
 
   private function result_item($photo) {

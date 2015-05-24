@@ -16,13 +16,16 @@ class FlickrSearch {
       'text' => urlencode($query)
     );
     $args = array_merge($args, $this->search_defaults(), $options);
-
-    $url = 'http://flickr.com/services/rest/?'; 
+    $url = 'https://flickr.com/services/rest/?'; 
     $search = $url . http_build_query($args);
     $result = $this->file_get_contents_curl($search); 
 
-    if ($args['format'] == 'php_serial') $result = unserialize($result); 
-    return $result; 
+    if ($result['stat'] == 'ok') {
+      return $result['photos'];
+    } else {
+      error_log('Flickr Search Error: [' . $result['code'] . '] ' . $result['message']);
+      return null;
+    }
   } 
 
   private function search_defaults() {
@@ -39,17 +42,19 @@ class FlickrSearch {
     curl_setopt($ch, CURLOPT_AUTOREFERER, 1);
     curl_setopt($ch, CURLOPT_HEADER, 0);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-    curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/31.0.1650.63 Safari/537.36');
+    curl_setopt($ch, CURLOPT_USERAGENT, $_SERVER['HTTP_USER_AGENT']);
     curl_setopt($ch, CURLOPT_URL, $url);
     curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
-    $data = curl_exec($ch);
-    $retcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-    if ($retcode == 200) {
-      return $data;
-    } else {
-      return null;
+
+    try {
+      $data = curl_exec($ch);
+      $retcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+      curl_close($ch);
+      return ($retcode == 200) ? unserialize($data) : null;
+    } catch (Exception $e) {
+      error_log('Flicker Search Error: ' . $e->getMessage());
     }
+
   } 
 }
 
