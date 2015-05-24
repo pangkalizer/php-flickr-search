@@ -51,3 +51,10 @@
     </div>
   </body>
 </html>
+
+<?php 
+
+unset($flickr);
+unset($search_data);
+
+?>
